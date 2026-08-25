@@ -1,0 +1,359 @@
+<meta charset="utf-8">
+<title>__TITLE__</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Archivo:wght@400;500;600;700&family=Caveat:wght@500;600;700&display=swap">
+<style>
+  :root{
+    --ground:#14171b; --panel:#1c2027; --panel-hi:#242a33; --line:#2e3641;
+    --gold:#c9a86a; --gold-dim:#8a744d; --gold-wash:rgba(201,168,106,.12);
+    --txt:#e6e1d6; --txt-dim:#9aa1ab;
+    --paper:#f2e8d2; --paper-edge:#d8c9a6; --ink:#2b241c;
+    --flag:#c25b4a; --flag-deep:#8f3d30;
+    --disp:"Cinzel",Georgia,serif; --ui:"Archivo","Helvetica Neue",Arial,sans-serif;
+    --pen:"Caveat","Comic Sans MS",cursive;
+  }
+  html{background:var(--ground);}
+  body{background:var(--ground); color:var(--txt); font-family:var(--ui); margin:0;}
+  .wrap{max-width:1240px; margin:0 auto; padding:0 20px 90px;}
+
+  /* ── toolbar ── */
+  .bar{position:sticky; top:0; z-index:50; background:rgba(20,23,27,.92);
+       border-bottom:1px solid var(--line); backdrop-filter:blur(8px);
+       padding:12px 20px; display:flex; align-items:center; gap:16px; flex-wrap:wrap;}
+  .bar .mark{font-family:var(--disp); font-weight:700; font-size:17px; letter-spacing:.06em;
+             color:var(--gold); white-space:nowrap;}
+  .bar .hint{color:var(--txt-dim); font-size:12.5px; flex:1; min-width:220px;}
+  .bar .count{font-size:12px; color:var(--txt-dim); background:var(--panel);
+              border:1px solid var(--line); border-radius:999px; padding:4px 12px; white-space:nowrap;
+              font-variant-numeric:tabular-nums;}
+  .bar button{font-family:var(--ui); font-weight:600; font-size:13px; letter-spacing:.04em;
+              color:#1a1408; background:linear-gradient(180deg,#d8b97b,#b6934f);
+              border:1px solid #7c6534; border-radius:7px; padding:8px 18px; cursor:pointer;}
+  .bar button:disabled{opacity:.38; cursor:default;}
+  .bar button:not(:disabled):hover{filter:brightness(1.07);}
+  .bar .status{font-size:12px; color:var(--txt-dim); min-width:120px;}
+  .bar .status.warn{color:var(--flag);}
+  .bar .status.ok{color:#9fc48a;}
+
+  .banner{display:none; background:#3a2a20; border:1px solid #6b4a2e; color:#e8c9a8;
+          border-radius:8px; padding:10px 14px; margin:16px 0 0; font-size:13px;}
+  .banner.show{display:block;}
+
+  /* ── board index ── */
+  .idx{display:flex; flex-wrap:wrap; gap:8px; margin:20px 0 6px;}
+  .idx a{font-size:12px; color:var(--txt-dim); text-decoration:none; background:var(--panel);
+         border:1px solid var(--line); border-radius:999px; padding:5px 12px;}
+  .idx a:hover{color:var(--gold); border-color:var(--gold-dim);}
+
+  /* ── boards ── */
+  .board{margin-top:44px; scroll-margin-top:86px;}
+  .bhead{display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; margin-bottom:10px;}
+  .board-title{font-family:var(--disp); font-weight:600; font-size:19px; letter-spacing:.05em;
+               color:var(--txt); margin:0;}
+  .chip{font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--gold-dim);
+        border:1px solid var(--gold-dim); border-radius:4px; padding:2px 8px;}
+  .caveat{font-size:11.5px; color:#d99d8d; border:1px dashed #8f5548; border-radius:4px; padding:2px 8px;}
+  .bnotes{font-size:12px; color:var(--txt-dim); margin-left:auto; font-variant-numeric:tabular-nums;}
+
+  .shotwrap{position:relative; border:1px solid var(--line); border-radius:10px; overflow:hidden;
+            background:var(--panel); cursor:crosshair; touch-action:manipulation;}
+  .board.phone .shotwrap{max-width:430px;}
+  .shotwrap img{display:block; width:100%; height:auto; user-select:none; -webkit-user-drag:none;}
+
+  /* ── post-its ── */
+  .note{position:absolute; width:172px; background:linear-gradient(178deg,var(--paper) 92%,var(--paper-edge));
+        color:var(--ink); border-radius:2px; padding:20px 12px 10px;
+        box-shadow:0 6px 14px rgba(0,0,0,.45), 0 1px 3px rgba(0,0,0,.4);
+        transform:rotate(var(--rot,0deg)); transform-origin:top left;
+        font-family:var(--pen); font-weight:600; font-size:16px; line-height:1.22;
+        cursor:grab; z-index:5; overflow-wrap:break-word;}
+  .note:hover{z-index:20;}
+  .note.dragging{cursor:grabbing; z-index:30; box-shadow:0 14px 28px rgba(0,0,0,.55);}
+  .note::before{content:""; position:absolute; top:-7px; left:50%; width:56px; height:16px;
+        transform:translateX(-50%) rotate(-2deg); background:rgba(201,168,106,.55);
+        border-left:1px solid rgba(0,0,0,.12); border-right:1px solid rgba(0,0,0,.12);}
+  .note.flag::before{background:rgba(194,91,74,.72);}
+  .note.flag{outline:2px solid var(--flag); outline-offset:-2px;}
+  .note .nid{position:absolute; top:2px; right:6px; font-family:var(--ui); font-weight:600;
+        font-size:10px; color:rgba(43,36,28,.55); letter-spacing:.04em;}
+  .note .ntext{white-space:pre-wrap; min-height:18px;}
+
+  .note.editing{cursor:default; z-index:40;}
+  .note textarea{width:100%; box-sizing:border-box; background:transparent; border:none; resize:vertical;
+        font-family:var(--pen); font-weight:600; font-size:16px; line-height:1.22; color:var(--ink);
+        min-height:56px; outline:1px dashed rgba(43,36,28,.35); padding:2px;}
+  .nrow{display:flex; gap:6px; margin-top:8px;}
+  .nrow button{flex:0 0 auto; font-family:var(--ui); font-size:11px; font-weight:600;
+        border-radius:4px; border:1px solid rgba(43,36,28,.4); background:rgba(255,255,255,.4);
+        color:var(--ink); padding:4px 9px; cursor:pointer;}
+  .nrow .bflag.on{background:var(--flag); border-color:var(--flag-deep); color:#fff;}
+  .nrow .bdel{margin-left:auto; color:var(--flag-deep);}
+  .nrow .bok{background:rgba(43,36,28,.85); color:var(--paper);}
+
+  /* ── ledger ── */
+  .ledger{margin-top:56px; border-top:1px solid var(--line); padding-top:18px;}
+  .ledger summary{font-family:var(--disp); font-weight:600; font-size:15px; letter-spacing:.06em;
+        color:var(--gold-dim); cursor:pointer;}
+  .ledger pre{background:var(--panel); border:1px solid var(--line); border-radius:8px;
+        padding:14px 16px; font-size:12.5px; line-height:1.55; color:var(--txt-dim);
+        white-space:pre-wrap; overflow-x:auto;}
+  @media (prefers-reduced-motion: no-preference){
+    .note{transition:box-shadow .12s ease;}
+  }
+</style>
+
+<div class="bar">
+  <span class="mark">__MARK__</span>
+  <span class="hint">Click anywhere on a screenshot to stick a note · drag a note to move it · click a note to edit · <b>Save</b> writes them into the page for Claude to read back.</span>
+  <span class="count" id="count">0 notes</span>
+  <button id="save" disabled>Save notes</button>
+  <span class="status" id="status"></span>
+</div>
+
+<div class="wrap">
+  <div class="banner" id="banner">This view can’t save notes — open the artifact on claude.ai as its owner to annotate.</div>
+
+  <nav class="idx" id="idx"></nav>
+
+  __BOARDS__
+
+  <details class="ledger" id="ledger" open>
+    <summary>Notes ledger — plain-text record of every note (this is what Claude reads back)</summary>
+    <pre id="ledger-text">— no notes yet —</pre>
+  </details>
+</div>
+
+<script type="application/json" id="marginalia-notes">__STATE__</script>
+
+<script>
+(function(){
+  "use strict";
+  var state;
+  try { state = JSON.parse(document.getElementById("marginalia-notes").textContent); }
+  catch(e){ state = {v:1,nextId:1,savedAt:null,notes:[]}; }
+  if(!state.notes) state.notes = [];
+  if(!state.nextId) state.nextId = 1;
+
+  var dirty = false, artifactNS = null, nsResolved = false;
+  var saveBtn = document.getElementById("save");
+  var statusEl = document.getElementById("status");
+  var countEl = document.getElementById("count");
+
+  /* board registry from the DOM */
+  var boards = {};
+  var idx = document.getElementById("idx");
+  document.querySelectorAll(".board").forEach(function(sec){
+    var key = sec.dataset.board;
+    boards[key] = { sec:sec, layer:sec.querySelector(".layer"),
+                    wrap:sec.querySelector(".shotwrap"),
+                    title:sec.querySelector(".board-title").textContent,
+                    tally:sec.querySelector(".bnotes") };
+    var a = document.createElement("a");
+    a.href = "#" + sec.id; a.textContent = boards[key].title;
+    idx.appendChild(a);
+  });
+
+  function rotFor(id){ return (((id * 137) % 9) - 4) * 0.6; }
+
+  function setStatus(msg, cls){
+    statusEl.textContent = msg || "";
+    statusEl.className = "status" + (cls ? " " + cls : "");
+  }
+  function markDirty(){
+    dirty = true;
+    saveBtn.disabled = false;
+    setStatus("unsaved notes", "warn");
+    refreshCounts();
+    buildLedger();
+  }
+  function refreshCounts(){
+    var n = state.notes.length, f = state.notes.filter(function(x){return x.flag;}).length;
+    countEl.textContent = n + (n===1?" note":" notes") + (f ? " · " + f + " ⚑" : "");
+    Object.keys(boards).forEach(function(k){
+      var c = state.notes.filter(function(x){return x.board===k;}).length;
+      boards[k].tally.textContent = c ? (c + (c===1?" note":" notes")) : "";
+    });
+  }
+
+  /* ── render ── */
+  function renderBoard(key){
+    var b = boards[key]; if(!b) return;
+    b.layer.innerHTML = "";
+    state.notes.filter(function(n){return n.board===key;}).forEach(function(n){
+      b.layer.appendChild(makeNote(n));
+    });
+    refreshCounts();
+  }
+  function renderAll(){ Object.keys(boards).forEach(renderBoard); }
+
+  function makeNote(n){
+    var el = document.createElement("div");
+    el.className = "note" + (n.flag ? " flag" : "");
+    el.style.left = n.x + "%";
+    el.style.top  = n.y + "%";
+    el.style.setProperty("--rot", rotFor(n.id) + "deg");
+    el.dataset.id = n.id;
+    var nid = document.createElement("span"); nid.className="nid"; nid.textContent = "#"+n.id;
+    var tx  = document.createElement("div"); tx.className="ntext"; tx.textContent = n.text;
+    el.appendChild(nid); el.appendChild(tx);
+    attachNoteEvents(el, n);
+    return el;
+  }
+
+  /* ── editing ── */
+  var openEditorNote = null;
+  function commitOpenEditor(){
+    if(!openEditorNote) return;
+    var el = openEditorNote.el, n = openEditorNote.n;
+    var ta = el.querySelector("textarea");
+    var txt = ta ? ta.value.trim() : n.text;
+    openEditorNote = null;
+    if(txt === ""){
+      state.notes = state.notes.filter(function(x){return x.id !== n.id;});
+    } else if(txt !== n.text){
+      n.text = txt;
+    } else { renderBoard(n.board); return; }
+    markDirty();
+    renderBoard(n.board);
+  }
+  function openEditor(el, n){
+    if(openEditorNote && openEditorNote.n.id === n.id) return;
+    commitOpenEditor();
+    el.classList.add("editing");
+    el.querySelector(".ntext").style.display = "none";
+    var ta = document.createElement("textarea");
+    ta.value = n.text;
+    var row = document.createElement("div"); row.className = "nrow";
+    var bf = document.createElement("button"); bf.className = "bflag" + (n.flag?" on":"");
+    bf.textContent = "⚑ issue"; bf.title = "toggle issue flag";
+    var bd = document.createElement("button"); bd.className = "bdel"; bd.textContent = "✕";
+    var bo = document.createElement("button"); bo.className = "bok"; bo.textContent = "done";
+    row.appendChild(bf); row.appendChild(bd); row.appendChild(bo);
+    el.appendChild(ta); el.appendChild(row);
+    openEditorNote = { el:el, n:n };
+    ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length);
+    bf.addEventListener("click", function(ev){ ev.stopPropagation();
+      n.flag = !n.flag; bf.classList.toggle("on", n.flag); el.classList.toggle("flag", n.flag); markDirty(); });
+    bd.addEventListener("click", function(ev){ ev.stopPropagation();
+      openEditorNote = null;
+      state.notes = state.notes.filter(function(x){return x.id !== n.id;});
+      markDirty(); renderBoard(n.board); });
+    bo.addEventListener("click", function(ev){ ev.stopPropagation(); commitOpenEditor(); });
+    ta.addEventListener("keydown", function(ev){
+      if(ev.key === "Enter" && (ev.metaKey || ev.ctrlKey)) commitOpenEditor();
+      if(ev.key === "Escape") commitOpenEditor();
+    });
+    ta.addEventListener("pointerdown", function(ev){ ev.stopPropagation(); });
+  }
+
+  /* ── drag + click ── */
+  function attachNoteEvents(el, n){
+    el.addEventListener("click", function(ev){ ev.stopPropagation(); });
+    el.addEventListener("pointerdown", function(ev){
+      if(el.classList.contains("editing")) { ev.stopPropagation(); return; }
+      ev.stopPropagation(); ev.preventDefault();
+      var wrap = boards[n.board].wrap;
+      var wr = wrap.getBoundingClientRect();
+      var startX = ev.clientX, startY = ev.clientY;
+      var origX = n.x, origY = n.y, moved = false;
+      el.setPointerCapture(ev.pointerId);
+      function onMove(e2){
+        var dx = e2.clientX - startX, dy = e2.clientY - startY;
+        if(!moved && Math.abs(dx) + Math.abs(dy) < 5) return;
+        moved = true;
+        el.classList.add("dragging");
+        n.x = Math.min(97, Math.max(0, origX + dx / wr.width  * 100));
+        n.y = Math.min(97, Math.max(0, origY + dy / wr.height * 100));
+        el.style.left = n.x.toFixed(2) + "%";
+        el.style.top  = n.y.toFixed(2) + "%";
+      }
+      function onUp(){
+        el.releasePointerCapture(ev.pointerId);
+        el.removeEventListener("pointermove", onMove);
+        el.removeEventListener("pointerup", onUp);
+        el.classList.remove("dragging");
+        if(moved){ n.x = +n.x.toFixed(2); n.y = +n.y.toFixed(2); markDirty(); }
+        else openEditor(el, n);
+      }
+      el.addEventListener("pointermove", onMove);
+      el.addEventListener("pointerup", onUp);
+    });
+  }
+
+  /* ── create on shot click ── */
+  Object.keys(boards).forEach(function(key){
+    boards[key].wrap.addEventListener("click", function(ev){
+      if(ev.target.closest(".note")) return;
+      commitOpenEditor();
+      var r = boards[key].wrap.getBoundingClientRect();
+      var x = +((ev.clientX - r.left) / r.width  * 100).toFixed(2);
+      var y = +((ev.clientY - r.top)  / r.height * 100).toFixed(2);
+      var n = { id: state.nextId++, board: key,
+                x: Math.min(x, 86), y: Math.min(y, 92),
+                text: "", flag: false, ts: new Date().toISOString() };
+      state.notes.push(n);
+      renderBoard(key);
+      var el = boards[key].layer.querySelector('[data-id="' + n.id + '"]');
+      if(el) openEditor(el, n);
+    });
+  });
+
+  /* ── ledger ── */
+  function buildLedger(){
+    var lines = ["__LEDGER__ — NOTES LEDGER",
+                 "saved: " + (state.savedAt || "never"), ""];
+    if(!state.notes.length) lines.push("— no notes yet —");
+    state.notes.slice().sort(function(a,b){return a.id-b.id;}).forEach(function(n){
+      var t = boards[n.board] ? boards[n.board].title : n.board;
+      lines.push("#" + n.id + " [" + t + "] (" + n.x + "%, " + n.y + "%)" +
+                 (n.flag ? " ⚑ISSUE" : "") + " — " + n.text.replace(/\n/g, " ⏎ "));
+    });
+    document.getElementById("ledger-text").textContent = lines.join("\n");
+  }
+
+  /* ── save = republish self ── */
+  async function resolveNS(){
+    if(nsResolved) return artifactNS;
+    nsResolved = true;
+    try { artifactNS = await claude.use("artifact"); } catch(e){ artifactNS = null; }
+    if(!artifactNS) document.getElementById("banner").classList.add("show");
+    return artifactNS;
+  }
+
+  saveBtn.addEventListener("click", async function(){
+    commitOpenEditor();
+    var ns = await resolveNS();
+    if(!ns){ setStatus("can’t save in this view", "warn"); return; }
+    saveBtn.disabled = true;
+    setStatus("saving…");
+    state.savedAt = new Date().toISOString();
+    var safe = JSON.stringify(state).replace(/</g, "\\u003c");
+    document.getElementById("marginalia-notes").textContent = safe;
+    buildLedger();
+    renderAll();
+    var html = "<!doctype html>\n" + document.documentElement.outerHTML;
+    try {
+      await ns.publish(html);
+      dirty = false;
+      setStatus("saved ✓ " + new Date().toLocaleTimeString(), "ok");
+    } catch(err){
+      saveBtn.disabled = false;
+      if(err && (err.code === "conflict" || /conflict/i.test(String(err.message||""))))
+        setStatus("someone saved first — reload the page", "warn");
+      else
+        setStatus("save failed — try again", "warn");
+    }
+  });
+
+  window.addEventListener("beforeunload", function(ev){
+    if(dirty){ ev.preventDefault(); ev.returnValue = ""; }
+  });
+
+  /* ── boot ── */
+  renderAll();
+  buildLedger();
+  refreshCounts();
+  if(state.savedAt) setStatus("last saved " + state.savedAt.slice(0,16).replace("T"," "));
+  resolveNS();
+})();
+</script>
