@@ -8,6 +8,10 @@ the page — and any Claude session can read them out again as structured input.
 It exists because *"the spacing on the third card is off"* is a sentence nobody should have to
 write. Point at the third card instead.
 
+![A marginalia board: three screenshots stacked in a dark page, with handwritten post-it notes
+stuck on two of them — one flagged red — and a toolbar reading "5 notes · 3 flagged" beside a
+Save notes button.](docs/board.jpg)
+
 ```
 you                          the board                    claude
 ───                          ─────────                    ──────
