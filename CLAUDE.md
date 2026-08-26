@@ -25,9 +25,9 @@ are repo-only.
 `0n1-Studios/marginalia`, MIT. Everything committed here is world-readable, so
 it holds a different bar from the rest of the workspace:
 
-- No paths, hostnames, ports, or ecosystem internals (Odin/Vault/Forge, `:31xx`)
-  in anything that ships. The skill must work for someone who has never heard of
-  Multitude.
+- No absolute paths, hostnames, local ports, or internal service names in
+  anything that ships — this file included. The skill must work for someone
+  outside the studio, on a machine that runs none of its other software.
 - No screenshots of the user's own projects in `docs/` unless they are meant to
   be public — `docs/board.jpg` is the deliberate exception.
 - README is the front door for strangers; keep the install path copy-pasteable.
