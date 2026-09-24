@@ -26,10 +26,6 @@ _Nothing in flight. Shipped 2026-08-25; next move is real-use feedback._
 
 _Empty — the repo is 1 day old._
 
-## From Crucible
-
-_No refined ideas filed yet._
-
 ## Recently shipped
 
 - **2026-08-25** — Public release: `SKILL.md`, `assets/build.py`,
