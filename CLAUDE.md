@@ -53,9 +53,8 @@ it holds a different bar from the rest of the workspace:
 
 ## Roadmap
 
-[ROADMAP.md](ROADMAP.md) is the single home of future work — update it in the
-same pass as shipping (workspace Docs Sync rule). Bugs go to GitHub issues with
-the `code-review` label, never the roadmap.
+Open work lives in [TODO.md](TODO.md) — delete an item's line when it ships;
+bugs go to GitHub issues (label `code-review`), never the roadmap.
 
 ## Conversation Title
 
